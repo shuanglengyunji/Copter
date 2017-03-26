@@ -8,17 +8,17 @@
 **********************************************************************************/
 #include "PID.h"
 
-//_PID_arg_st	系数
+//_PID_arg_st	参数
 //_PID_val_st	变量
 
-float PID_calculate( float T,            //周期（单位：秒）
-										float in_ff,				//前馈值
-										float expect,				//期望值（设定值）
-										float feedback,				//反馈值（上一次的调整结构，也就是当前的状态输入）
-										_PID_arg_st *pid_arg, 		//PID参数结构体
-										_PID_val_st *pid_val,		//PID数据结构体
-										float inte_lim				//integration limit，积分限幅
-										 )	
+float PID_calculate(	float T,            //周期（单位：秒）
+						float in_ff,				//前馈值
+						float expect,				//期望值（设定值）
+						float feedback,				//反馈值（上一次的调整结构，也就是当前的状态输入）
+						_PID_arg_st *pid_arg, 		//PID参数结构体
+						_PID_val_st *pid_val,		//PID数据结构体
+						float inte_lim				//integration limit，积分限幅
+					)	
 {
 	float out,differential;
 	pid_arg->k_inc_d_norm = LIMIT(pid_arg->k_inc_d_norm,0,1);	//k_inc_d_norm 限幅为 0 -- 1
@@ -38,14 +38,19 @@ float PID_calculate( float T,            //周期（单位：秒）
 	LPF_1_(pid_arg->inc_hz,T,differential,pid_val->err_d_lpf);	//对 d 的数值 differential 进行低通滤波，得到最终的 d
 																//存入 pid_val->err_d_lpf
 	
-	pid_val->err_i += (pid_val->err + pid_arg->k_pre_d *pid_val->feedback_d )*T;//)*T;//
-	pid_val->err_i = LIMIT(pid_val->err_i,-inte_lim,inte_lim);
+	//I 积分
+	pid_val->err_i += (pid_val->err + pid_arg->k_pre_d   * pid_val->feedback_d )*T;//)*T;//
+//					   误差量		  反馈误差微分(d)系数 * 反馈微分
 	
-	out = pid_arg->k_ff *in_ff 
-	    + pid_arg->kp *pid_val->err  
-	    + pid_arg->k_inc_d_norm *pid_val->err_d_lpf + (1.0f-pid_arg->k_inc_d_norm) *differential
-    	+ pid_arg->ki *pid_val->err_i;
+	pid_val->err_i = LIMIT(pid_val->err_i,-inte_lim,inte_lim);	//对误差的积分进行限幅
 	
+	//PID公式
+	out = pid_arg->k_ff *in_ff			//前馈值
+	    + pid_arg->kp *pid_val->err  	//P
+	    + pid_arg->k_inc_d_norm *pid_val->err_d_lpf + (1.0f-pid_arg->k_inc_d_norm) *differential	//D
+    	+ pid_arg->ki *pid_val->err_i;	//I
+	
+	//保存历史数据
 	pid_val->feedback_old = feedback;
 	pid_val->err_old = pid_val->err;
 	

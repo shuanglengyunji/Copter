@@ -96,11 +96,12 @@ float auto_take_off_land(float dT,u8 ready)
 
 
 _PID_arg_st h_acc_arg;		//加速度
-_PID_arg_st h_speed_arg;	//速度
-_PID_arg_st h_height_arg;	//高度
-
 _PID_val_st h_acc_val;
+
+_PID_arg_st h_speed_arg;	//速度
 _PID_val_st h_speed_val;
+
+_PID_arg_st h_height_arg;	//高度
 _PID_val_st h_height_val;
 
 void h_pid_init()
@@ -141,33 +142,45 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 	//thr：0 -- 1000
 	static u8 speed_cnt,height_cnt;
 	
-	if(ready == 0)	//没有解锁
+//==============================================================================================
+//解锁状态判断（如果没有解锁，则把起飞判断、高度pid积分都清零
+	
+	if(ready == 0)	//没有解锁（已经上锁）
 	{
-		ex_i_en = ex_i_en_f = 0;
+		ex_i_en = ex_i_en_f = 0;	
 		en = 0;						//转换为手动模式，此模式直接对外输出传入的油门值
-		thr_take_off = 0;
-		thr_take_off_f = 0;
+		thr_take_off = 0;			//起飞油门 = 0
+		thr_take_off_f = 0;			//起飞指示归零（表示没有起飞）
 	}
 	
-	/*飞行中初次进入定高模式切换处理*/
-	if(ABS(en - en_old) > 0.5f)//从非定高切换到定高
-	{
-		if(thr_take_off<10)//未计算起飞油门
-		{
-			if(thr_set > -150)
-			{
-				thr_take_off = 400;
-				
-			}
-		}
-		en_old = en;
-	}
-	
-	/*定高控制*/
-	//h_pid_init();
+//==============================================================================================
+//遥控器输入值处理
 	
 	//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500
 	thr_set = my_deathzoom_2(my_deathzoom((thr - 500),0,40),0,10);	//±50为死区，零点为±40的位置
+	
+	//此后使用 thr_set ，范围 -500 -- +500
+	
+	//==============================================================================================
+	
+	
+	/*飞行中初次进入定高模式切换处理*/
+	if( ABS(en - en_old) > 0.5f )	//从非定高切换到定高（官方注释）
+									//我认为是模式在飞行中被切换，切换方向不确定
+	{
+		if(thr_take_off<10)			//未计算起飞油门（官方注释）
+		{
+			if(thr_set > -150)	//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500。
+								//thr_set > -150 代表油门非低
+			{
+				thr_take_off = 400;
+			}
+		}
+		en_old = en;	//更新历史模式
+	}
+	
+//==============================================================================================
+// 油门控制飞机进行上升\下降（将油门值转化为期望垂直速度值 set_speed_t）
 	
 	if(thr_set>0)	//上升
 	{
@@ -177,9 +190,9 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 		{
 			ex_i_en_f = 1;
 			
-			if(!thr_take_off_f)	//没有起飞
+			if(!thr_take_off_f)	//如果没有起飞（本次解锁后还没有起飞）
 			{
-				thr_take_off_f = 1; //用户可能想要起飞
+				thr_take_off_f = 1; //用户可能想要起飞（切换为已经起飞）
 				thr_take_off = 350; //直接赋值 一次
 			}
 		}
@@ -193,21 +206,27 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 		set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;	//set_speed_t 表示期望上升速度占最大下降速度的比值
 	}
 	
-	set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
+	set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//垂直速度期望限幅
 	
-	//exp_speed =my_pow_2_curve(exp_speed_t,0.45f,MAX_VERTICAL_SPEED);
+	//将 set_speed_t 进行曲线化、滤波生成 exp_speed
+//	exp_speed =my_pow_2_curve(exp_speed_t,0.45f,MAX_VERTICAL_SPEED);
 	LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed
 																						//my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
-	set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅
+	
+	set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//exp_speed 限幅
 	
 	//至此完成对输入数据的处理（把输入数据映射到期望速度）
+	//set_speed 为期望垂直速度
 	
+//==============================================================================================	
+//高度数据获取：气压计数据
 	
-//===============================================================================	
-	//高度数据获取： 气压计数据
 	baro_ctrl(T,&hc_value); 
 	
-//===============================================================================		
+//==============================================================================================
+
+	
+	
 	//计算高度误差（可加滤波）
 	set_height_em += (set_speed - hc_value.m_speed) *T;
 	set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门
@@ -232,7 +251,8 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 //	加速度PID
 	
 	float acc_i_lim;
-	acc_i_lim = safe_div(150,h_acc_arg.ki,0);		//acc_i_lim = 150 / h_acc_arg.ki
+	acc_i_lim = safe_div(150,h_acc_arg.ki,0);		//计算 acc_i_lim ，加速度ID的ki越大，acc_i_lim 越小（防止积分影响过大）
+													//acc_i_lim = 150 / h_acc_arg.ki
 													//避免除零错误（如果出现除零情况，就得0）
 	
 	//计算加速度
@@ -242,7 +262,7 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 	
 	//fb_acc是当前加速度值
 	
-	//一种改进的PID算法
+	//一种改进的PID算法（和常见的PID算法的用法一直，结果含义等效）
 	thr_pid_out = PID_calculate( T,            		//周期
 								 exp_acc,			//前馈
 								 exp_acc,			//期望值（设定值）
@@ -255,20 +275,20 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 	//step_filter(1000 *T,thr_pid_out,thr_pid_out_dlim);
 	
 	//起飞油门
-	if(h_acc_val.err_i > (acc_i_lim * 0.2f))
+	if(h_acc_val.err_i > (acc_i_lim * 0.2f))	//如果积分大于最大积分值的20%（积分值过大）
 	{
 		if(thr_take_off<THR_TAKE_OFF_LIMIT)
 		{
 			thr_take_off += 150 *T;
-			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;
+			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;	//加速度积分PID的ki减小
 		}
 	}
-	else if(h_acc_val.err_i < (-acc_i_lim * 0.2f))
+	else if(h_acc_val.err_i < (-acc_i_lim * 0.2f))	//如果积分小于最大负积分值的20%（积分值过小）
 	{
 		if(thr_take_off>0)
 		{
 			thr_take_off -= 150 *T;
-			h_acc_val.err_i += safe_div(150,h_acc_arg.ki,0) *T;
+			h_acc_val.err_i += safe_div(150,h_acc_arg.ki,0) *T;	//加速度积分PID的ki增大
 		}
 	}
 	
@@ -279,10 +299,9 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 	
 	//油门输出
 	thr_out = (thr_pid_out + tilted_fix *(thr_take_off) );	//由两部分组成：油门PID + 油门补偿 * 起飞油门
+															//thr_take_off应该可以理解为油门基准值，或者说是高度保持油门
 	
 	thr_out = LIMIT(thr_out,0,1000);
-	
-
 	
 /////////////////////////////////////////////////////////////////////////////////	
 	static float dT,dT2;
