@@ -208,12 +208,14 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 	
 	set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//垂直速度期望限幅
 	
-	//将 set_speed_t 进行曲线化、滤波生成 exp_speed
-//	exp_speed =my_pow_2_curve(exp_speed_t,0.45f,MAX_VERTICAL_SPEED);
-	LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed
-																						//my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
 	
-	set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//exp_speed 限幅
+//	exp_speed =my_pow_2_curve(exp_speed_t,0.45f,MAX_VERTICAL_SPEED);	//exp_speed_t曲线化
+	
+	//将 set_speed_t 进行曲线化、滤波生成 set_speed
+	LPF_1_(10.0f,T,  my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW)  ,set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed
+																							//my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
+	
+	set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//set_speed 限幅
 	
 	//至此完成对输入数据的处理（把输入数据映射到期望速度）
 	//set_speed 为期望垂直速度
@@ -250,6 +252,9 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 //===============================================================================
 //	加速度PID
 	
+	//输入：加速度 fb_acc
+	//输出：期望油门值 thr_pid_out
+	
 	float acc_i_lim;
 	acc_i_lim = safe_div(150,h_acc_arg.ki,0);		//计算 acc_i_lim ，加速度ID的ki越大，acc_i_lim 越小（防止积分影响过大）
 													//acc_i_lim = 150 / h_acc_arg.ki
@@ -270,46 +275,60 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 								 &h_acc_arg, 		//PID参数结构体
 								 &h_acc_val,		//PID数据结构体
 								 acc_i_lim*en		//integration limit，积分限幅     如果在手动模式，en = 0，这个结果就是0了
-								);					//输出		
+								);					//输出	
+								
+//===============================================================================
+//	起飞油门（基准油门）调整
 
-	//step_filter(1000 *T,thr_pid_out,thr_pid_out_dlim);
-	
-	//起飞油门
 	if(h_acc_val.err_i > (acc_i_lim * 0.2f))	//如果积分大于最大积分值的20%（积分值过大）
+												//积分值过大代表积分时间过长，所以需要增大基准油门
 	{
-		if(thr_take_off<THR_TAKE_OFF_LIMIT)
+		if(thr_take_off<THR_TAKE_OFF_LIMIT)	//如果基准油门thr_take_off没有超过上限值（550）
 		{
-			thr_take_off += 150 *T;
-			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;	//加速度积分PID的ki减小
+			thr_take_off += 150 *T;								//增大基准值
+			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;	//减小积分值，避免积分饱和过深（加速度积分PID的ki减小）
 		}
 	}
-	else if(h_acc_val.err_i < (-acc_i_lim * 0.2f))	//如果积分小于最大负积分值的20%（积分值过小）
+	else if(h_acc_val.err_i < (-acc_i_lim * 0.2f))		//如果积分小于最大负积分值的20%（积分值过小）
+														//积分值负值过大代表积分时间过长，所以需要减小基准油门
 	{
-		if(thr_take_off>0)
+		if(thr_take_off>0)	//如果基准油门thr_take_off没有低于下限（0）
 		{
-			thr_take_off -= 150 *T;
-			h_acc_val.err_i += safe_div(150,h_acc_arg.ki,0) *T;	//加速度积分PID的ki增大
+			thr_take_off -= 150 *T;								//减小基准值
+			h_acc_val.err_i += safe_div(150,h_acc_arg.ki,0) *T;	//增大积分值，防止积分饱和过深（加速度积分PID的ki增大）
 		}
 	}
 	
-	thr_take_off = LIMIT(thr_take_off,0,THR_TAKE_OFF_LIMIT); //一半
-	
+	thr_take_off = LIMIT(thr_take_off,0,THR_TAKE_OFF_LIMIT); //限幅
+
+//===============================================================================
 	//油门补偿
 	tilted_fix = safe_div(1,LIMIT(reference_v.z,0.707f,1),0); //45度内补偿
 	
-	//油门输出
+/////////////////////////////////////////////////////////////////////////////////
+	
+	
+	
+//===============================================================================
+//	油门输出
 	thr_out = (thr_pid_out + tilted_fix *(thr_take_off) );	//由两部分组成：油门PID + 油门补偿 * 起飞油门
 															//thr_take_off应该可以理解为油门基准值，或者说是高度保持油门
 	
-	thr_out = LIMIT(thr_out,0,1000);
+	thr_out = LIMIT(thr_out,0,1000);	//限幅
 	
-/////////////////////////////////////////////////////////////////////////////////	
+
+	
+//===============================================================================
+//	速度PID
+
 	static float dT,dT2;
 	dT += T;
 	speed_cnt++;
 	if(speed_cnt>=10) //u8  20ms
 	{
-
+		//速度PID
+		//输入：期望速度 exp_speed
+		//输出：期望加速度 exp_acc
 		exp_acc = PID_calculate( dT,           				//周期
 								exp_speed,					//前馈
 								(set_speed + exp_speed),	//期望值（设定值）
@@ -330,19 +349,20 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 		height_cnt++;
 		if(height_cnt>=10)  //200ms 
 		{
-			/////////////////////////////////////
-
-		 exp_speed = PID_calculate( dT2,            //周期
-																0,				//前馈
-																0,				//期望值（设定值）
-																-set_height_e,			//反馈值
-																&h_height_arg, //PID参数结构体
-																&h_height_val,	//PID数据结构体
-																1500 *en			//integration limit，积分限幅
-																 );			//输出	
+			//高度PID（定高PID）
+			//期望高度是0
+			
+			exp_speed = PID_calculate( dT2,         	//周期
+										0,				//前馈
+										0,				//期望值（设定值）
+										-set_height_e,	//反馈值
+										&h_height_arg, 	//PID参数结构体
+										&h_height_val,	//PID数据结构体
+										1500 *en		//integration limit，积分限幅
+									 );					//输出	
 			
 			exp_speed = LIMIT(exp_speed,-300,300);
-			/////////////////////////////////////
+			
 			dT2 = 0;
 			height_cnt = 0;
 		}
