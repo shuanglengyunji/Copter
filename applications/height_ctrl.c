@@ -228,7 +228,6 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 //==============================================================================================
 
 	
-	
 	//计算高度误差（可加滤波）
 	set_height_em += (set_speed - hc_value.m_speed) *T;
 	set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门

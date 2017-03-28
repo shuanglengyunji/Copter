@@ -44,7 +44,9 @@ void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 	Usart2_Send(data_to_send, length);
 #endif
 }
-static void ANO_DT_Send_Check(u8 head, u8 check_sum)
+
+//发送校验码
+static void ANO_DT_Send_Check(u8 head, u8 check_sum)	
 {
 	data_to_send[0]=0xAA;
 	data_to_send[1]=0xAA;
@@ -61,7 +63,9 @@ static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 
 	ANO_DT_Send_Data(data_to_send, 7);
 }
-static void ANO_DT_Send_Msg(u8 id, u8 data)
+
+//发送包头
+static void ANO_DT_Send_Msg(u8 id, u8 data)		
 {
 	data_to_send[0]=0xAA;
 	data_to_send[1]=0xAA;
@@ -78,7 +82,9 @@ static void ANO_DT_Send_Msg(u8 id, u8 data)
 
 	ANO_DT_Send_Data(data_to_send, 7);
 }
-/////////////////////////////////////////////////////////////////////////////////////
+//===================================================================================================
+//发送
+
 //Data_Exchange函数处理各种数据发送请求，比如想实现每5ms发送一次传感器数据至上位机，即在此函数内实现
 //此函数应由用户每1ms调用一次
 extern float ultra_dis_lpf;
@@ -94,6 +100,9 @@ void ANO_DT_Data_Exchange(void)
 	static u8 power_cnt		= 50;
 	static u8 speed_cnt   	= 50;
 	static u8 location_cnt  = 200;
+	
+//========================================================================================
+	//发送计时器，控制发送频率
 	
 	if((cnt % senser_cnt) == (senser_cnt-1))
 		f.send_senser = 1;
@@ -125,12 +134,18 @@ void ANO_DT_Data_Exchange(void)
 	}
 	
 	if(++cnt>200) cnt = 0;
+	
+//========================================================================================
+	
 /////////////////////////////////////////////////////////////////////////////////////
 	if(f.msg_id)
 	{
 		ANO_DT_Send_Msg(f.msg_id,f.msg_data);
 		f.msg_id = 0;
 	}
+	
+	
+	
 /////////////////////////////////////////////////////////////////////////////////////
 	if(f.send_check)
 	{
@@ -194,7 +209,7 @@ void ANO_DT_Data_Exchange(void)
 #else
 		
 #endif
-	}	
+	}
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_power)
 	{
@@ -902,7 +917,7 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-  _temp = (s16)baro_fusion.fusion_displacement.out;              //5
+	_temp = (s16)baro_fusion.fusion_displacement.out;              //5
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
