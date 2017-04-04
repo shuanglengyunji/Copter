@@ -61,6 +61,8 @@ static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 
 	ANO_DT_Send_Data(data_to_send, 7);
 }
+
+extern u8 mode_state;
 static void ANO_DT_Send_Msg(u8 id, u8 data)
 {
 	data_to_send[0]=0xAA;
@@ -155,7 +157,7 @@ void ANO_DT_Data_Exchange(void)
 	else if(f.send_status)
 	{
 		f.send_status = 0;
-		ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	0,			fly_ready);	
+		ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	mode_state+1,			fly_ready);	
 		//					Roll	Pitch	Yaw		高度											飞行模式		解锁状态
 	}	
 /////////////////////////////////////////////////////////////////////////////////////
