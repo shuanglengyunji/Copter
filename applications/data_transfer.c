@@ -24,6 +24,7 @@
 #include "fly_ctrl.h"
 #include "adc.h"
 #include "camera_datatransfer.h"
+#include "camera_data_calculate.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送

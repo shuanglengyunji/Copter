@@ -5,6 +5,7 @@
 #include "mymath.h"
 #include "anotc_baro_ctrl.h"
 #include "camera_datatransfer.h"
+#include "camera_data_calculate.h"
 #include "ctrl.h"
 #include "mymath.h"
 

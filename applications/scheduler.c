@@ -25,6 +25,7 @@
 #include "anotc_baro_ctrl.h"
 #include "usart.h"
 #include "camera_datatransfer.h"
+#include "camera_data_calculate.h"
 #include "adc.h"
 
 s16 loop_cnt;
