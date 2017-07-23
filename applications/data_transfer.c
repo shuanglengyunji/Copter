@@ -576,6 +576,8 @@ void ANO_DT_Send_User2()
 	
 	data_to_send[_cnt++] = height_command;		//高度控制指令编号
 	
+	data_to_send[_cnt++] = (u8)(receive_fps*10);	//接受图像处理板数据的频率*10（提供一位小数点）
+	
 	data_to_send[3] = _cnt-4;				//LEN位，在这里补上
 	
 	u8 sum = 0;
