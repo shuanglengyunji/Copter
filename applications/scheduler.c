@@ -40,13 +40,14 @@ void Loop_check()  //TIME INTTERRUPT
 	loop.cnt_10ms++;
 	loop.cnt_20ms++;
 	loop.cnt_50ms++;
+	loop.cnt_camera++;
 
 	if( loop.check_flag == 1)
 	{
 		loop.err_flag ++;     //每累加一次，证明代码在预定周期内没有跑完。
 	}
 	else
-	{	
+	{
 		loop.check_flag = 1;	//该标志位在循环的最后被清零
 	}
 	
@@ -132,11 +133,13 @@ void Duty_5ms()
 	mydata.d1 = (s16)ultra.height * 10;
 	mydata.d2 = (s16)sonar.displacement;
 	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-	mydata.d4 = (s16)processing_fps;
+	mydata.d4 = (s16)my_except_height;
 	mydata.d5 = (s16)receive_fps;
 	mydata.d6 = (s16)bias;
 	mydata.d7 = (s16)bias_real;
 	mydata.d8 = (s16)bias_lpf;
+	mydata.d9 = (s16)speed_d_bias;
+	mydata.d10 = (s16)speed_d_lpf;
 }
 
 //10ms线程
@@ -167,11 +170,16 @@ void Duty_50ms()
 	
 }
 
+void Duty_Camera()
+{
+	float camera_loop_time;
+	camera_loop_time = Get_Cycle_T(4)/1000000.0f;	//转换为以s为单位
+	
+	Camera_Data_Calculate();	//Camera数据处理
+	Fly_Ctrl_Camera(camera_loop_time);
+}
+
 //********************************************************************************************************
-
-
-
-
 
 //任务调度
 void Duty_Loop()   					//最短任务周期为1ms，总的代码执行时间需要小于1ms。
@@ -183,6 +191,12 @@ void Duty_Loop()   					//最短任务周期为1ms，总的代码执行时间需
 		
 		Duty_1ms();							//周期1ms的任务
 		
+		if( loop.camear_updata_flag >= 1 || loop.cnt_camera > 200)	//最低200ms调用1次，防止失控
+		{
+			loop.camear_updata_flag = 0;
+			loop.cnt_camera = 0;
+			Duty_Camera();
+		}
 		if( loop.cnt_2ms >= 2 )
 		{
 			loop.cnt_2ms = 0;

@@ -243,7 +243,6 @@ float roll_integration = 0;
 void attitude_single_p(u8 en)
 {
 	float p_out,i_out,d_out,out;
-	static float bias_old;
 	
 	if(en)
 	{
@@ -265,7 +264,7 @@ void attitude_single_p(u8 en)
 			if( bias > 50 )
 			{
 				//左偏过大
-				p_out = 40 * user_parameter.groups.self_def_1.kp;		//右飞
+				p_out = 40 * user_parameter.groups.self_def_1.kp;	//右飞
 			}
 			else if( bias < -50 )
 			{
@@ -289,12 +288,8 @@ void attitude_single_p(u8 en)
 		}
 		
 		//d
-		d_out = ( bias_lpf - bias_old ) * user_parameter.groups.self_def_2.kd;		//bias_lpf左正右负
-																					//bias_lpf - bias_old	为正对应向左飞，为负对应向右飞
-																					//d控制的目的是对速度产生抑制，只要保证力的方向与速度方向相反即可
-																					//所以只需向速度反向提供加速度即可
+		d_out = speed_d_lpf * user_parameter.groups.self_def_2.kd;		//speed + <--- ---> - ，d调整只需要抑制speed变化即可
 		d_out = LIMIT(d_out,-70,70);	//限制输出幅度为+-70，允许d引起刹车动作
-		bias_old = bias_lpf;
 		
 		//输出整合
 		out = p_out + i_out + d_out;
@@ -305,10 +300,6 @@ void attitude_single_p(u8 en)
 		//俯仰和航向手动控制
 		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-		
-		mydata.d9 = (s16)p_out;
-		mydata.d10 = (s16)i_out;
-		mydata.d11 = (s16)out;
 	}
 	else
 	{
@@ -335,20 +326,9 @@ void yaw_pid(void)
 	
 }
 
+
 //========================================================================================
-//========================================================================================
-//	飞行自动控制函数
-//
-//	根据ctrl_command调用不同的自动控制函数
-//
-//	mode_state：
-//	0：手动				1：气压计
-//	2：超声波+气压计		3：自动
-//
-//	ctrl_command：
-//	0：正常的手动飞行模式（超声波+气压计定高）		1：高度锁定
-//	2：高度锁定+姿态归零							3：降落模式												
-//========================================================================================
+//									飞行自动控制函数（5ms）
 //========================================================================================
 
 void Fly_Ctrl(void)		//调用周期5ms
@@ -364,6 +344,10 @@ void Fly_Ctrl(void)		//调用周期5ms
 //===========================================================
 	
 	/*
+	
+	mode_state：
+	0：手动				1：气压计
+	2：超声波+气压计		3：自动
 	
 	飞行控制的主要任务有两个：
 	
@@ -414,19 +398,75 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令1
 	if(ctrl_command == 0)
 	{
-		attitude_hand();
+		attitude_hand();	//手飞依旧在5ms中处理
 	}
 	
-	//指令2
-	if(ctrl_command == 1)
-	{
-		attitude_pingpong();	//横滚角乒乓控制
-	}
+//	//指令2
+//	if(ctrl_command == 1)
+//	{
+//		//attitude_pingpong();	//自动控制根据数据源频率转移到Camera同频线程中处理
+//	}
 	
 	//指令3
 	if(ctrl_command == 2)
 	{
 		attitude_hand();
+	}
+	
+//	//指令4
+//	if(ctrl_command == 3)
+//	{
+//		//attitude_single_p(1);	//自动控制根据数据源频率转移到Camera同频线程中处理
+//	}
+//	else
+//	{
+//		//attitude_single_p(0);	//自动控制根据数据源频率转移到Camera同频线程中处理
+//	}
+	
+	//指令5
+	if(ctrl_command == 4)
+	{
+		attitude_hand();
+	}
+	
+	//指令6
+	if(ctrl_command == 5)
+	{
+		attitude_hand();
+	}
+	
+	//********************************************************
+	//意外状况处理
+	if(ctrl_command > 5)
+	{
+		attitude_hand();
+	}
+	
+}
+
+//========================================================================================
+//							飞行自动控制函数（camera同频调用）
+//========================================================================================
+
+void Fly_Ctrl_Camera(float T)		//调用周期为Camera数据采样周期
+{	
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
+	/*
+		姿态控制，处理横滚、俯仰、航向三轴
+		CH_ctrl[0] = CH_filter[0];	//0：横滚
+		CH_ctrl[1] = CH_filter[1];	//1：俯仰
+		CH_ctrl[3] = CH_filter[3];	//3：航向
+	*/
+	
+	//指令2
+	if(ctrl_command == 1)
+	{
+		attitude_pingpong();	//横滚角乒乓控制
 	}
 	
 	//指令4
@@ -437,24 +477,6 @@ void Fly_Ctrl(void)		//调用周期5ms
 	else
 	{
 		attitude_single_p(0);
-	}
-	
-	//指令5
-	if(ctrl_command == 4)
-	{
-		yaw_pid();
-	}
-	
-	//指令6
-	if(ctrl_command == 5)
-	{
-		attitude_hand();
-	}
-	
-	//意外状况处理
-	if(ctrl_command > 5)
-	{
-		attitude_hand();
 	}
 	
 }

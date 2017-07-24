@@ -18,7 +18,6 @@ sonar_fusion.fusion_displacement.out	mm		float
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
 
-
 //=========================================================================================================================
 //====================================================发送数据==============================================================
 //=========================================================================================================================
@@ -125,7 +124,7 @@ float speed = 0;	//速度
 //姿态
 float Roll_Image = 0;		//结果对应的角度
 float Pitch_Image = 0;		//结果对应的角度
-float Yaw_Image = 0;
+float Yaw_Image = 0;		//结果对应的角度
 float Height_Image = 0;		//结果对应的高度
 
 //参数
@@ -133,7 +132,7 @@ float fps = 0;
 float processing_fps = 0;
 
 //时间间隔
-u32 receive_T = 1000000;	//赋初值，防止除零错误
+u32 receive_T;	//赋初值，防止除零错误
 
 //=========================================================================================================================
 //====================================================接收数据==============================================================
@@ -147,7 +146,7 @@ void Get_Camera_Status(void)
 {
 	fps = *((float*)(&(Tmp_Buffer[0])));
 	processing_fps = *((float*)(&(Tmp_Buffer[4])));
-	//tmp = *((float*)(&(Tmp_Buffer[8])));
+	//第三个float数值内容为空
 }
 
 /*
@@ -156,34 +155,43 @@ u8 mode		0：本帧只更新图像数据，上一帧运算还没有结束
 			1：本帧更新图像数据的同时，上一帧的运算也已经结束，数据内容开始输出
 */
 float Roll_Image_Latest = 0;	//最新的的Roll
+float Pitch_Image_Latest = 0;	//最新的的Pitch
+float Yaw_Image_Latest = 0;		//最新的的Yaw
 float Height_Image_Latest = 0;	//最新的Height
 void Get_Camera_Get_Image_Flag(u8 mode)
 {
-	static float roll_tmp = 0;	//临时保存roll数值
-	static float height_tmp = 0;
+	static float roll_tmp = 0;		//临时保存roll数值
+	static float pitch_tmp = 0;		//临时保存pitch数值
+	static float yaw_tmp = 0;		//临时保存yaw数值
+	static float height_tmp = 0;	//临时保存height数值
 	
 	if(mode == 0)
 	{
 		//正常采图
 		roll_tmp = Roll;
+		pitch_tmp = Pitch;
+		yaw_tmp = Yaw;
 		height_tmp = sonar.displacement;
 	}
 	else if(mode == 1)
 	{
 		//采图+运算开始
 		Roll_Image_Latest = roll_tmp;	//读取图像采纳时的roll为当前数据的roll
+		Pitch_Image_Latest = pitch_tmp;
+		Yaw_Image_Latest = yaw_tmp;
 		Height_Image_Latest = height_tmp;
 		
-		roll_tmp = Roll;	//正常采图
+		//更新tmp变量数值
+		roll_tmp = Roll;
+		pitch_tmp = Pitch;
+		yaw_tmp = Yaw;
 		height_tmp = sonar.displacement;
 	}
 }
 
 //接收偏移信息
 void Get_Position(void)
-{
-	//******************* 采集数据 **********************
-	
+{	
 	//接收时间间隔
 	receive_T = Get_Cycle_T(3);	//以us为单位
 	
@@ -194,12 +202,12 @@ void Get_Position(void)
 	
 	//读取本次结果对应图像采集时的飞机姿态信息
 	Roll_Image = Roll_Image_Latest;
+	Pitch_Image = Pitch_Image_Latest;
+	Yaw_Image = Yaw_Image_Latest;
 	Height_Image = Height_Image_Latest;
 	
-	//************** 数据运算 ******************
-	
-	//数据补偿
-	Real_Length_Calculate(receive_T,Roll_Image,Pitch_Image,Yaw_Image,Height_Image);
+	//将Camera数据更新标志置位
+	loop.camear_updata_flag = 1;
 }
 
 //=========================================================================================================================

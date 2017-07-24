@@ -123,7 +123,6 @@ void sys_time()
 	}
 	else
 	{
-		
 		time_1ms =0;
 		if(time_1s<59)
 		{

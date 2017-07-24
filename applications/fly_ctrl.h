@@ -16,6 +16,7 @@ extern u8 height_command;			//当前飞行指令
 
 //定时调用线程
 void Fly_Ctrl(void);			//在schedule里调用
+void Fly_Ctrl_Camera(float T);		//Camera同频飞行控制函数
 void Ctrl_Mode(float *ch_in);	//在fly_mode里调用
 
 //数传输入处理函数

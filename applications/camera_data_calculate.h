@@ -5,9 +5,12 @@
 
 extern float bias_lpf;
 extern float bias_real;
+extern float speed_d_bias;
+extern float speed_d_lpf;
+
 extern float receive_fps;
 
-void Real_Length_Calculate(float T,float roll,float pitch,float yaw,float height);
+void Camera_Data_Calculate(void);
 
 #endif
 
