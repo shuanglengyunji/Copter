@@ -28,6 +28,5 @@ void Outer_Loop(float);
 
 extern loop_t loop;
 
-
 #endif
 

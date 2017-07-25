@@ -72,31 +72,13 @@ void acc_fusion(float dT,_f_set_st *set,float est_acc,_fusion_p_st *pre_data,_fu
 }
 
 //超声波融合参数
-
 #define SONAR_AV_NUM 50
 float sonar_av_arr[SONAR_AV_NUM];
 u16 sonar_av_cnt;
 
 _fusion_p_st sonar;
 _fusion_st sonar_fusion;
-_f_set_st sonar_f_set = {
-													0.2f,
-													0.5f,
-													0.8f,
-													
-													0.2f,
-													0.5f,
-													0.8f
-						};
-
-
-//													0.2f,
-//													0.3f,
-//													0.5f,
-//													
-//													0.1f,
-//													0.3f,
-//													0.5f
+_f_set_st sonar_f_set = {0.2f,0.5f,0.8f,   0.2f,0.5f,0.8f};
 
 //气压计融合参数											
 #define BARO_AV_NUM 100
@@ -104,23 +86,7 @@ float baro_av_arr[BARO_AV_NUM];
 u16 baro_av_cnt;
 _fusion_p_st baro_p;
 _fusion_st baro_fusion;
-_f_set_st baro_f_set = {
-													0.1f,
-													0.2f,
-													0.3f,
-													
-													0.1f,
-													0.1f,
-													0.2f	
-						};
-
-//													0.2f,
-//													0.3f,
-//													0.5f,
-//													
-//													0.1f,
-//													0.3f,
-//													0.5f
+_f_set_st baro_f_set = {0.1f,0.2f,0.3f,   0.1f,0.1f,0.2f};
 
 float sonar_weight;		//超声波数据权重
 float wz_speed,sonarz_speed;	//wz_speed 是气压计数据得出的相对准确的垂直速度

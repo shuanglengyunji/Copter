@@ -10,9 +10,9 @@ float speed_d_bias_lpf = 0;
 float receive_fps = 0;
 
 
-//µÍÍ¨ÂË²¨Æ÷
-//dt£º²ÉÑùÊ±¼ä¼ä¸ô£¨µ¥Î»us£©
-//fc£º½ØÖ¹ÆµÂÊ
+//ä½é€šæ»¤æ³¢å™¨
+//dtï¼šé‡‡æ ·æ—¶é—´é—´éš”ï¼ˆå•ä½usï¼‰
+//fcï¼šæˆªæ­¢é¢‘ç‡
 float cam_bias_lpf(float bias ,float dt_us ,float fc,float last_bias_lpf)
 {
 	float q,out,T;
@@ -29,8 +29,8 @@ float cam_bias_lpf(float bias ,float dt_us ,float fc,float last_bias_lpf)
 }
 
 /*
-//biasÊı¾İĞ£×¼º¯Êı
-float bias_correct(float roll, float hight,float bias)   ///hight --³¬Éù²¨²âÁ¿Öµ   roll--ºá¹öÆ«½Ç  bias--Í¼ÏñÏñËØµãÆ«ÒÆ
+//biasæ•°æ®æ ¡å‡†å‡½æ•°
+float bias_correct(float roll, float hight,float bias)   ///hight --è¶…å£°æ³¢æµ‹é‡å€¼   roll--æ¨ªæ»šåè§’  bias--å›¾åƒåƒç´ ç‚¹åç§»
 {
     float x1,real_bias;
 	x1=hight*sin(roll*3.141f/180.0f);
@@ -39,14 +39,14 @@ float bias_correct(float roll, float hight,float bias)   ///hight --³¬Éù²¨²âÁ¿Öµ
 }
 */
 
-float bias_correct(float roll, float pitch, float hight, float bias)   ///hight --³¬Éù²¨²âÁ¿Öµ   roll--ºá¹öÆ«½Ç  bias--Í¼ÏñÏñËØµãÆ«ÒÆ
+float bias_correct(float roll, float pitch, float hight, float bias)   ///hight --è¶…å£°æ³¢æµ‹é‡å€¼   roll--æ¨ªæ»šåè§’  bias--å›¾åƒåƒç´ ç‚¹åç§»
 {
-    float x1, real_bias, coe_bias;  //coe_bias Îª²âµÃµÄbias µ½Êµ¼ÊbiasµÄÏµÊı
+    float x1, real_bias, coe_bias;  //coe_bias ä¸ºæµ‹å¾—çš„bias åˆ°å®é™…biasçš„ç³»æ•°
 	
-	//½ÃÕı²ÎÊı
+	//çŸ«æ­£å‚æ•°
 	x1 = hight * sin(roll*3.141f/180.0f);
 	
-	//ÏµÊı
+	//ç³»æ•°
 	coe_bias = (0.0021f*hight*hight+0.2444f*hight+8.9576f) / 40.0f;
 	
 	real_bias = coe_bias * bias - x1;
@@ -55,15 +55,15 @@ float bias_correct(float roll, float pitch, float hight, float bias)   ///hight 
 }
 
 /*
-	T£ºÊ±¼ä¼ä¸ô£¨µ¥Î»us£©
-	bias£º±¾´ÎË®Æ½Æ«ÒÆÁ¿£¨µ¥Î»cm£©
-	bias_old£ºÉÏ´ÎË®Æ½Æ«ÒÆÁ¿£¨µ¥Î»cm£©
+	Tï¼šæ—¶é—´é—´éš”ï¼ˆå•ä½usï¼‰
+	biasï¼šæœ¬æ¬¡æ°´å¹³åç§»é‡ï¼ˆå•ä½cmï¼‰
+	bias_oldï¼šä¸Šæ¬¡æ°´å¹³åç§»é‡ï¼ˆå•ä½cmï¼‰
 */
 float get_speed(u32 T,float bias,float bias_last)
 {
 	/*
-		biasÊıÖµ£º  + <--- ---> -
-		speed·½Ïò£º + <--- ---> - Ïò×ó·ÉËÙ¶ÈÎªÕı£¬ÏòÓÒ·ÉËÙ¶ÈÎª¸º
+		biasæ•°å€¼ï¼š  + <--- ---> -
+		speedæ–¹å‘ï¼š + <--- ---> - å‘å·¦é£é€Ÿåº¦ä¸ºæ­£ï¼Œå‘å³é£é€Ÿåº¦ä¸ºè´Ÿ
 	*/
 	
 	float dx,dt,speed;
@@ -74,17 +74,17 @@ float get_speed(u32 T,float bias,float bias_last)
 	return speed;
 }
 
-//CameraÊı¾İ´¦Àí
-float bias_lpf_old;	//ÉÏÒ»¸öÔÚ¿ÉÓÃ·¶Î§ÄÚµÄbias
+//Cameraæ•°æ®å¤„ç†
+float bias_lpf_old;	//ä¸Šä¸€ä¸ªåœ¨å¯ç”¨èŒƒå›´å†…çš„bias
 void Camera_Calculate(void)
 {
 	static float bias_old;
 	
-	//¼ÆËã½ÓÊÕÖ¡ÂÊ
-	receive_fps = safe_div(1000000.0f,receive_T,0);	//×ª»¯ÎªÒÔHzÎªµ¥Î»
+	//è®¡ç®—æ¥æ”¶å¸§ç‡
+	receive_fps = safe_div(1000000.0f,receive_T,0);	//è½¬åŒ–ä¸ºä»¥Hzä¸ºå•ä½
 	
 	//**************************************
-	//È«°×Ê±ÓÃ+-100±íÊ¾
+	//å…¨ç™½æ—¶ç”¨+-100è¡¨ç¤º
 	if(bias_pitch)
 	{
 		if(bias_old > 0)
@@ -95,12 +95,12 @@ void Camera_Calculate(void)
 	bias_old = bias;
 
 	//**************************************
-	//Êı¾İĞ£×¼ÓëÂË²¨
-	if(ABS(bias)<50)	//Ö»ÓĞÔÚºÏÀí·¶Î§ÄÚ²Å»á½ÃÕı£¬½ÃÕıµÄÍ¬Ê±½øĞĞµÍÍ¨ÂË²¨
+	//æ•°æ®æ ¡å‡†ä¸æ»¤æ³¢
+	if(ABS(bias)<50)	//åªæœ‰åœ¨åˆç†èŒƒå›´å†…æ‰ä¼šçŸ«æ­£ï¼ŒçŸ«æ­£çš„åŒæ—¶è¿›è¡Œä½é€šæ»¤æ³¢
 	{
-		//Õı³£Çé¿ö
-		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//×ËÌ¬Îó²îĞ£×¼
-		bias_lpf = cam_bias_lpf(bias_real,receive_T,0.8f,bias_lpf);		//µÍÍ¨ÂË²¨Æ÷
+		//æ­£å¸¸æƒ…å†µ
+		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//å§¿æ€è¯¯å·®æ ¡å‡†
+		bias_lpf = cam_bias_lpf(bias_real,receive_T,0.8f,bias_lpf);		//ä½é€šæ»¤æ³¢å™¨
 		speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old);
 		speed_d_bias_lpf = cam_bias_lpf(speed_d_bias,receive_T,1.0f,speed_d_bias_lpf);
 		

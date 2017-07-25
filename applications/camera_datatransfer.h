@@ -8,22 +8,22 @@ void Copter_Receive_Handle(unsigned char data);
 
 //========================================================================
 
-//¿ÉÓÃ²ÎÊı±í
+//å¯ç”¨å‚æ•°è¡¨
 
-extern float bias;			//Æ«ÒÆ
-extern float bias_pitch;	//pitchÆ«ÒÆ
-extern float angle;			//½Ç¶È
+extern float bias;			//åç§»
+extern float bias_pitch;	//pitchåç§»
+extern float angle;			//è§’åº¦
 
-
-//²ÎÊı
+//å‚æ•°
 extern float fps;
 extern float processing_fps;
 extern float receive_T;
 
-extern float Roll_Image;		//½á¹û¶ÔÓ¦µÄ½Ç¶È
+extern float Roll_Image;		//ç»“æœå¯¹åº”çš„è§’åº¦
 extern float Pitch_Image;
 extern float Yaw_Image;
-extern float Height_Image;		//½á¹û¶ÔÓ¦µÄ¸ß¶È
+extern float Height_Image;		//ç»“æœå¯¹åº”çš„é«˜åº¦
+
 
 //========================================================================
 

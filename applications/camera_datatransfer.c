@@ -2,10 +2,11 @@
 #include "camera_data_calculate.h"
 #include "usart.h"
 #include "anotc_baro_ctrl.h"
+#include "camera_data_calculate.h"
 
 /*
 
-¸ß¶ÈÊı¾İ£º
+é«˜åº¦æ•°æ®ï¼š
 
 ultra.relative_height					cm		float
 sonar.displacement						mm		float
@@ -18,36 +19,35 @@ sonar_fusion.fusion_displacement.out	mm		float
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
 
-
 //=========================================================================================================================
-//====================================================·¢ËÍÊı¾İ==============================================================
+//====================================================å‘é€æ•°æ®==============================================================
 //=========================================================================================================================
 //=========================================================================================================================
 
 unsigned char Data_Buffer[20];
 
-//·¢ËÍÊı¾İ½Ó¿Ú
+//å‘é€æ•°æ®æ¥å£
 void Send_to_Camera(unsigned char *DataToSend ,u8 data_num)
 {
 	Usart3_Send(DataToSend,data_num);
 }
 
-//·¢ËÍ¸ß¶ÈÊı¾İ
+//å‘é€é«˜åº¦æ•°æ®
 void Copter_Send_Height(void)
 {
 	float tmp_f;
 	
 	u8 cnt = 0;
 	
-	//Ö¡Í·
+	//å¸§å¤´
 	Data_Buffer[cnt++] = 0xAA;	
 	Data_Buffer[cnt++] = 0xAA;
 	
-	//¹¦ÄÜ×Ö
+	//åŠŸèƒ½å­—
 	Data_Buffer[cnt++] = 0x01;	
 	
-	//ÄÚÈİ
-	tmp_f = ultra.relative_height*10;	//×ªÎªmmµ¥Î»
+	//å†…å®¹
+	tmp_f = ultra.relative_height*10;	//è½¬ä¸ºmmå•ä½
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
 	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE2(tmp_f);
@@ -68,34 +68,34 @@ void Copter_Send_Height(void)
 	Send_to_Camera(Data_Buffer,cnt);
 }
 
-//·¢ËÍ×ËÌ¬Êı¾İ
+//å‘é€å§¿æ€æ•°æ®
 void Copter_Send_Attitude(void)
 {
 	float tmp_f;
 	
 	u8 cnt = 0;
 	
-	//Ö¡Í·
+	//å¸§å¤´
 	Data_Buffer[cnt++] = 0xAA;	
 	Data_Buffer[cnt++] = 0xAA;
 	
-	//¹¦ÄÜ×Ö
+	//åŠŸèƒ½å­—
 	Data_Buffer[cnt++] = 0x02;	
 	
-	//ÄÚÈİ
-	tmp_f = Roll;	//ºá¹ö£¬µ¥Î»ÊÇ¡ã
+	//å†…å®¹
+	tmp_f = Roll;	//æ¨ªæ»šï¼Œå•ä½æ˜¯Â°
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
 	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE2(tmp_f);
 	Data_Buffer[cnt++] = BYTE3(tmp_f);
 	
-	tmp_f = Pitch;	//¸©Ñö
+	tmp_f = Pitch;	//ä¿¯ä»°
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
 	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE2(tmp_f);
 	Data_Buffer[cnt++] = BYTE3(tmp_f);
 	
-	tmp_f = Yaw;	//º½Ïò
+	tmp_f = Yaw;	//èˆªå‘
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
 	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE2(tmp_f);
@@ -104,7 +104,7 @@ void Copter_Send_Attitude(void)
 	Send_to_Camera(Data_Buffer,cnt);
 }
 
-//¶¨Ê±·¢ËÍÊı¾İº¯Êı£¨scheduler.cÖĞµ÷ÓÃ£©
+//å®šæ—¶å‘é€æ•°æ®å‡½æ•°ï¼ˆscheduler.cä¸­è°ƒç”¨ï¼‰
 void Copter_Data_Send(void)
 {
 	Copter_Send_Height();
@@ -112,57 +112,56 @@ void Copter_Data_Send(void)
 }
 
 //=========================================================================================================================
-//=========================================================================================================================
-//=================================================== ²ÎÊı±í ==============================================================
-//=========================================================================================================================
+//=================================================== å‚æ•°è¡¨ ==============================================================
 //=========================================================================================================================
 
-//¿ÉÓÃ²ÎÊı±í
+//å¯ç”¨å‚æ•°è¡¨
 
-float bias = 0;		//Æ«ÒÆ
-float angle = 0;	//½Ç¶È
-float bias_pitch = 0;	//ËÙ¶È
+float bias = 0;		//åç§»
+float angle = 0;	//è§’åº¦
+float bias_pitch = 0;	//é€Ÿåº¦
 
-//²ÎÊı
+
+//å‚æ•°
 float fps = 0;
 float processing_fps = 0;
 float receive_T = 0;
 
-float Roll_Image = 0;		//½á¹û¶ÔÓ¦µÄ½Ç¶È
+float Roll_Image = 0;		//ç»“æœå¯¹åº”çš„è§’åº¦
 float Pitch_Image = 0;
 float Yaw_Image = 0;
-float Height_Image = 0;		//½á¹û¶ÔÓ¦µÄ¸ß¶È
+float Height_Image = 0;		//ç»“æœå¯¹åº”çš„é«˜åº¦
 
 //=========================================================================================================================
-//====================================================½ÓÊÕÊı¾İ==============================================================
+//====================================================æ¥æ”¶æ•°æ®==============================================================
 //=========================================================================================================================
 
-//Êı¾İÔİ´æÊı×é
+//æ•°æ®æš‚å­˜æ•°ç»„
 unsigned char Tmp_Buffer[20];
 
-//½ÓÊÕCamera×´Ì¬ĞÅÏ¢
+//æ¥æ”¶CameraçŠ¶æ€ä¿¡æ¯
 void Get_Camera_Status(void)
 {
 	fps = *((float*)(&(Tmp_Buffer[0])));
 	processing_fps = *((float*)(&(Tmp_Buffer[4])));
-	//tmp = *((float*)(&(Tmp_Buffer[8])));
+	//ç¬¬ä¸‰ä¸ªfloatæ•°å€¼å†…å®¹ä¸ºç©º
 }
 
-//½ÓÊÕÍ¼Ïñ²É¼¯Ê±¼äĞÅÏ¢
-float Roll_Image_Latest = 0;		//±¾´Î²É¼¯¿ªÊ¼Ê±¶ÔÓ¦µÄRoll
+//æ¥æ”¶å›¾åƒé‡‡é›†æ—¶é—´ä¿¡æ¯
+float Roll_Image_Latest = 0;		//æœ¬æ¬¡é‡‡é›†å¼€å§‹æ—¶å¯¹åº”çš„Roll
 float Pitch_Image_Latest = 0;
 float Yaw_Image_Latest = 0;
-float Height_Image_Latest = 0;	//±¾´Î²É¼¯¿ªÊ¼Ê±¶ÔÓ¦µÄHeight
+float Height_Image_Latest = 0;	//æœ¬æ¬¡é‡‡é›†å¼€å§‹æ—¶å¯¹åº”çš„Height
 void Get_Camera_Get_Image_Flag(u8 mode)
 {
-	static float roll_tmp = 0;	//ÁÙÊ±±£´ærollÊıÖµ
+	static float roll_tmp = 0;	//ä¸´æ—¶ä¿å­˜rollæ•°å€¼
 	static float pitch_tmp = 0;
 	static float yaw_tmp = 0;
 	static float height_tmp = 0;
 	
 	if(mode == 0)
 	{
-		//Õı³£²ÉÍ¼
+		//æ­£å¸¸é‡‡å›¾
 		roll_tmp = Roll;
 		pitch_tmp = Pitch;
 		yaw_tmp = Yaw;
@@ -170,13 +169,13 @@ void Get_Camera_Get_Image_Flag(u8 mode)
 	}
 	else if(mode == 1)
 	{
-		//²ÉÍ¼+ÔËËã¿ªÊ¼
-		Roll_Image_Latest = roll_tmp;	//¶ÁÈ¡Í¼Ïñ²ÉÄÉÊ±µÄrollÎªµ±Ç°Êı¾İµÄroll
+		//é‡‡å›¾+è¿ç®—å¼€å§‹
+		Roll_Image_Latest = roll_tmp;	//è¯»å–å›¾åƒé‡‡çº³æ—¶çš„rollä¸ºå½“å‰æ•°æ®çš„roll
 		Pitch_Image_Latest = pitch_tmp;
 		Yaw_Image_Latest = yaw_tmp;
 		Height_Image_Latest = height_tmp;
 		
-		//¸üĞÂtmp±äÁ¿ÊıÖµ
+		//æ›´æ–°tmpå˜é‡æ•°å€¼
 		roll_tmp = Roll;
 		pitch_tmp = Pitch;
 		yaw_tmp = Yaw;
@@ -184,23 +183,26 @@ void Get_Camera_Get_Image_Flag(u8 mode)
 	}
 }
 
-//½ÓÊÕÆ«ÒÆĞÅÏ¢
+//æ¥æ”¶åç§»ä¿¡æ¯
 void Get_Position(void)
 {
-	receive_T = Get_Cycle_T(3);	//ÒÔusÎªµ¥Î»
+
+	receive_T = Get_Cycle_T(3);	//ä»¥usä¸ºå•ä½
 	
-	//»ñÈ¡Êı¾İ
+	//ä½ç½®æ•°æ®
 	bias  = *((float*)(&(Tmp_Buffer[0])));
 	bias_pitch = *((float*)(&(Tmp_Buffer[4])));
 	angle = *((float*)(&(Tmp_Buffer[8])));
 	
-	//¶ÁÈ¡±¾´Î½á¹û¶ÔÓ¦Í¼Ïñ²É¼¯Ê±µÄ·É»ú×ËÌ¬ĞÅÏ¢
+	//è¯»å–æœ¬æ¬¡ç»“æœå¯¹åº”å›¾åƒé‡‡é›†æ—¶çš„é£æœºå§¿æ€ä¿¡æ¯
 	Roll_Image = Roll_Image_Latest;
 	Pitch_Image = Pitch_Image_Latest;
 	Yaw_Image = Yaw_Image_Latest;
 	Height_Image = Height_Image_Latest;
 	
+
 	loop.camera_data_ok = 1;
+
 }
 
 //=========================================================================================================================
@@ -230,12 +232,12 @@ void Copter_Receive_Handle(unsigned char data)
 			break;
 			
 		case 2:
-			if(data == 0x01)	//½øÈë¹¦ÄÜ×Ö1½âÂë
+			if(data == 0x01)	//è¿›å…¥åŠŸèƒ½å­—1è§£ç 
 			{
 				mode = 10;
 				counter = 0;
 			}
-			else if(data == 0x02)	//½øÈë¹¦ÄÜ×Ö2½âÂë
+			else if(data == 0x02)	//è¿›å…¥åŠŸèƒ½å­—2è§£ç 
 			{
 				mode = 11;
 				counter = 0;
@@ -245,28 +247,28 @@ void Copter_Receive_Handle(unsigned char data)
 				mode = 12;
 				counter = 0;
 			}
-			else				//Ã»ÓĞ¶ÔÓ¦¹¦ÄÜ×Ö
+			else				//æ²¡æœ‰å¯¹åº”åŠŸèƒ½å­—
 			{
 				mode = 0;
 			}
 			break;
 		
 		case 10:
-			Tmp_Buffer[counter] = data;	//3*4×Ö½Ú£¬×Ü¹²Õ¼ÓÃÊı×é0-11Î»
+			Tmp_Buffer[counter] = data;	//3*4å­—èŠ‚ï¼Œæ€»å…±å ç”¨æ•°ç»„0-11ä½
 			counter++;
 			if(counter>=12)
 			{
-				Get_Position();	//¸ß¶ÈÊı¾İ»ñÈ¡Íê³É
+				Get_Position();	//é«˜åº¦æ•°æ®è·å–å®Œæˆ
 				mode = 0;
 			}
 		break;
 			
 		case 11:
-			Tmp_Buffer[counter] = data;	//3*4×Ö½Ú£¬×Ü¹²Õ¼ÓÃÊı×é0-11Î»
+			Tmp_Buffer[counter] = data;	//3*4å­—èŠ‚ï¼Œæ€»å…±å ç”¨æ•°ç»„0-11ä½
 			counter++;
 			if(counter>=12)
 			{
-				Get_Camera_Status();	//µ×°å×´Ì¬»ñÈ¡Íê³É
+				Get_Camera_Status();	//åº•æ¿çŠ¶æ€è·å–å®Œæˆ
 				mode = 0;
 			}
 		break;

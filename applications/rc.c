@@ -253,7 +253,7 @@ void Fly_Ready(float T,float height_speed_mm)
 	//自动模式下解锁 油门低 垂直速度低 手动控高度
 	//自动模式下用自动控高时不会自动锁定
 	if((fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300) && (mode_state != 3)) || 
-		(fly_ready && (CH_ctrl[THR] < -400) && (ABS(height_speed_mm)<300) && (mode_state == 3) && (my_height_mode == 0)))	// 高度控制模式为手动控高（自动控高时不受此约束）
+		(fly_ready && (CH_ctrl[THR]<-400) && (ABS(height_speed_mm)<300) && (mode_state == 3) && (my_height_mode == 0)))	// 高度控制模式为手动控高（自动控高时不受此约束）
 	{
 		if(locked_cnt < 4000)	//4000ms = 4s
 		{

@@ -4,23 +4,23 @@
 #include "stm32f4xx.h"
 #include "include.h"
 
-//Êä³öµÄ¿ØÖÆÀàĞÅÏ¢
-extern float CH_ctrl[CH_NUM];	//¾ßÌåÊäÈë¸øctrlµÄÒ£¿ØÆ÷Öµ
+//è¾“å‡ºçš„æ§åˆ¶ç±»ä¿¡æ¯
+extern float CH_ctrl[CH_NUM];	//å…·ä½“è¾“å…¥ç»™ctrlçš„é¥æ§å™¨å€¼
 extern u8 All_Out_Switch;
 extern u8 my_height_mode;
 extern float my_except_height;
 
-//ÉÏÎ»»ú¼à¿Ø±äÁ¿£¨ÉÏÎ»»ú¼à¿Ø×´Ì¬£¬µ«²»ÓÃÓÚÆäËûº¯ÊıµÄ¿ØÖÆ£©
-extern u8 ctrl_command;			//µ±Ç°·ÉĞĞÖ¸Áî
-extern u8 height_command;			//µ±Ç°·ÉĞĞÖ¸Áî
+//ä¸Šä½æœºç›‘æ§å˜é‡ï¼ˆä¸Šä½æœºç›‘æ§çŠ¶æ€ï¼Œä½†ä¸ç”¨äºå…¶ä»–å‡½æ•°çš„æ§åˆ¶ï¼‰
+extern u8 ctrl_command;			//å½“å‰é£è¡ŒæŒ‡ä»¤
+extern u8 height_command;			//å½“å‰é£è¡ŒæŒ‡ä»¤
 
-//¶¨Ê±µ÷ÓÃÏß³Ì
-void Fly_Ctrl(void);			//ÔÚscheduleÀïµ÷ÓÃ
+//å®šæ—¶è°ƒç”¨çº¿ç¨‹
+void Fly_Ctrl(void);			//åœ¨scheduleé‡Œè°ƒç”¨
 void Fly_Ctrl_Cam(void);
-void Ctrl_Mode(float *ch_in);	//ÔÚfly_modeÀïµ÷ÓÃ
+void Ctrl_Mode(float *ch_in);	//åœ¨fly_modeé‡Œè°ƒç”¨
 
-//Êı´«ÊäÈë´¦Àíº¯Êı
-void set_except_height(u8 height);	//½ÓÊÕ¸ß¶ÈÊı¾İ
+//æ•°ä¼ è¾“å…¥å¤„ç†å‡½æ•°
+void set_except_height(u8 height);	//æ¥æ”¶é«˜åº¦æ•°æ®
 void set_attitude_calibration(u8);
 void set_all_out_switch(u8 cmd);
 
